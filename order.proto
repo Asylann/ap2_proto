@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "github.com/Asylann/ap2_generated;ap2_generated";
+
+service OrderService {
+  // Server-side streaming for real-time updates [cite: 39, 42]
+  rpc SubscribeToOrderUpdates (OrderRequest) returns (stream OrderStatusUpdate);
+}
+
+message OrderRequest {
+  string order_id = 1;
+}
+
+message OrderStatusUpdate {
+  string order_id = 1;
+  string status = 2;
+  string message = 3;
+}

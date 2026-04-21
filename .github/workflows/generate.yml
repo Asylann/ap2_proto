@@ -1,0 +1,55 @@
+name: Generate gRPC Code
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Proto Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22' # Or your preferred version
+
+      - name: Install Protoc & Plugins
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          # FIX: This tells GitHub Actions to permanently add the Go bin to the PATH for the rest of the job
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Generate Go Code
+        run: |
+          mkdir -p ./gen
+          # Ensure your .proto files are in the root, or change *.proto to the correct path
+          protoc --go_out=./gen --go_opt=paths=source_relative \
+                 --go-grpc_out=./gen --go-grpc_opt=paths=source_relative \
+                 *.proto
+
+      - name: Push to Generated Repo
+        env:
+          PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git clone https://x-access-token:$PAT@github.com/Asylann/ap2_generated.git target_repo
+          
+          # Clean old files in target to avoid keeping deleted protos
+          find target_repo -name "*.pb.go" -type f -delete
+          
+          cp -r ./gen/* target_repo/
+          
+          cd target_repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add .
+          # The || true prevents the action from failing if there are no code changes
+          git commit -m "Auto-generated gRPC code from ap2_proto" || true
+          git push origin main
