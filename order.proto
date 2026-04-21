@@ -5,7 +5,7 @@ package order;
 option go_package = "github.com/Asylann/ap2_generated;ap2_generated";
 
 service OrderService {
-  // Server-side streaming for real-time updates [cite: 39, 42]
+  // Server-side streamingfor real-time updates [cite: 39, 42]
   rpc SubscribeToOrderUpdates (OrderRequest) returns (stream OrderStatusUpdate);
 }
 
