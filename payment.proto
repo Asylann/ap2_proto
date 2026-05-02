@@ -8,19 +8,19 @@ option go_package = "github.com/Asylann/ap2_generated;ap2_generated";
 
 service PaymentService {
   rpc ProcessPayment (PaymentRequest) returns (PaymentResponse);
-  // Unary RPC for filtered payments [User Input]
   rpc ListPayments (ListPaymentsRequest) returns (ListPaymentsResponse);
 }
 
 message PaymentRequest {
-  string order_id = 1;
-  int64 amount = 2; // in cents
-  string currency = 3;
+  string order_id      = 1;
+  int64  amount        = 2; // in cents
+  string currency      = 3;
+  string customer_email = 4; // NEW: forwarded by Order Service
 }
 
 message PaymentResponse {
   string payment_id = 1;
-  string status = 2;
+  string status     = 2;
   google.protobuf.Timestamp created_at = 3;
 }
 
@@ -31,4 +31,14 @@ message ListPaymentsRequest {
 
 message ListPaymentsResponse {
   repeated PaymentResponse payments = 1;
+}
+
+// PaymentCompletedEvent is the contract for the RabbitMQ AMQP event.
+// Published by Payment Service, consumed by Notification Service.
+message PaymentCompletedEvent {
+  string message_id      = 1; // UUID — used as idempotency key
+  string order_id        = 2;
+  int64  amount          = 3; // in cents
+  string customer_email  = 4;
+  string status          = 5;
 }
